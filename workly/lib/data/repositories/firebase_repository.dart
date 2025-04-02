@@ -1,7 +1,7 @@
 import 'package:workly/data/repositories/document_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:workly/features/editor/models/block.dart';
-import 'package:workly/features/editor/models/document.dart';
+import 'package:workly/data/models/block.dart';
+import 'package:workly/data/models/document.dart';
 
 class FirebaseRepository implements DocumentRepository {
   final _firestore = FirebaseFirestore.instance;

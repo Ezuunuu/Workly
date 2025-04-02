@@ -1,5 +1,5 @@
-import 'package:workly/features/editor/models/block.dart';
-import 'package:workly/features/editor/models/document.dart';
+import 'package:workly/data/models/block.dart';
+import 'package:workly/data/models/document.dart';
 
 abstract class DocumentRepository {
   Future<Document> createDocument(String title, String ownerId);

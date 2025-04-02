@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:workly/features/editor/models/block_content/block_content.dart';
+import 'package:workly/data/models/block_content/block_content.dart';
 
 enum BlockType { text, image, checkbox, table }
 
@@ -46,4 +46,22 @@ class Block {
       (json['size']['height'] as num).toDouble(),
     ),
   );
+
+  Block copyWith({
+    String? id,
+    BlockType? type,
+    BlockContent? content,
+    int? order,
+    Offset? position,
+    Size? size,
+  }) {
+    return Block(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      content: content ?? this.content,
+      order: order ?? this.order,
+      position: position ?? this.position,
+      size: size ?? this.size,
+    );
+  }
 }

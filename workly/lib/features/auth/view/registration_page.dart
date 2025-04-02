@@ -45,7 +45,6 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
       );
     } catch (e) {
-      print(e);
       setState(() => errorMessage = e.toString());
     } finally {
       setState(() => isLoading = false);
@@ -55,6 +54,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(

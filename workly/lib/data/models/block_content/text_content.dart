@@ -1,4 +1,4 @@
-import 'package:workly/features/editor/models/block_content/block_content.dart';
+import 'package:workly/data/models/block_content/block_content.dart';
 
 class TextContent implements BlockContent {
   final String text;

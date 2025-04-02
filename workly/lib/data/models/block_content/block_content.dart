@@ -1,4 +1,4 @@
-import 'package:workly/features/editor/models/block.dart';
+import 'package:workly/data/models/block.dart';
 
 import 'text_content.dart';
 import 'image_content.dart';
