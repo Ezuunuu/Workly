@@ -67,22 +67,72 @@ class _HomePageState extends State<HomePage> {
       body:
           isLoading
               ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                itemCount: projects.length,
-                itemBuilder: (context, index) {
-                  final project = projects[index];
-                  return ListTile(
-                    title: Text(project['name'] ?? '제목 없음'),
-                    subtitle: Text('생성일: ${project['created_at'] ?? ''}'),
-                    onTap:
-                        () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) =>
-                                    ProjectDetailPage(projectId: project['id']),
+              : LayoutBuilder(
+                builder: (context, constraints) {
+                  const cardWidth = 160.0;
+                  final crossAxisCount =
+                      (constraints.maxWidth / cardWidth).floor();
+
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: projects.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount.clamp(1, 6), // 최소 1, 최대 6개
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 5 / 4,
+                    ),
+                    itemBuilder: (context, index) {
+                      final project = projects[index];
+                      return Material(
+                        color: Colors.transparent, // 카드 배경과 겹치지 않게
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => ProjectDetailPage(
+                                      projectId: project['id'],
+                                    ),
+                              ),
+                            );
+                          },
+                          child: Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    project['name'] ?? '제목 없음',
+                                    style:
+                                        Theme.of(context).textTheme.titleSmall,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    project['created_at']?.toString().substring(
+                                          0,
+                                          10,
+                                        ) ??
+                                        '',
+                                    style:
+                                        Theme.of(context).textTheme.labelSmall,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
+                      );
+                    },
                   );
                 },
               ),

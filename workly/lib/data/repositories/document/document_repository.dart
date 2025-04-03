@@ -2,7 +2,7 @@ import 'package:workly/data/models/block.dart';
 import 'package:workly/data/models/document.dart';
 
 abstract class DocumentRepository {
-  Future<Document> createDocument(String title, String ownerId);
+  Future<Document> createDocument(String title, String projectId);
   Future<Document?> getDocument(String documentId);
   Future<void> updateDocument(Document document);
 

@@ -5,11 +5,13 @@ import 'package:workly/core/env.dart';
 import 'package:workly/data/auth/authentication_repository.dart';
 import 'package:workly/data/auth/firebase_auth_repository.dart';
 import 'package:workly/data/auth/supabase_auth_repository.dart';
+import 'package:workly/data/repositories/document/firebase_document_repository.dart';
+import 'package:workly/data/repositories/document/supabase_document_repository.dart';
 import 'package:workly/data/repositories/project/firebase_project_repository.dart';
 import 'package:workly/data/repositories/project/project_repository.dart';
 import 'package:workly/data/repositories/project/supabase_project_repository.dart';
-import '../features/editor/cubit/editor_cubit.dart';
-import '../data/repositories/document_repository.dart';
+import 'package:workly/features/document/cubit/document_cubit.dart';
+import '../data/repositories/document/document_repository.dart';
 
 final getIt = GetIt.instance;
 
@@ -23,6 +25,9 @@ Future<void> setupLocator() async {
     getIt.registerLazySingleton<ProjectRepository>(
       () => FirebaseProjectRepository(),
     );
+    getIt.registerLazySingleton<DocumentRepository>(
+      () => FirebaseDocumentRepository(),
+    );
   } else if ((currentAuthProvider == AuthProviderType.supabase)) {
     await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
     getIt.registerLazySingleton<AuthenticationRepository>(
@@ -31,10 +36,13 @@ Future<void> setupLocator() async {
     getIt.registerLazySingleton<ProjectRepository>(
       () => SupabaseProjectRepository(),
     );
+    getIt.registerLazySingleton<DocumentRepository>(
+      () => SupabaseDocumentRepository(),
+    );
   }
 
   // Bloc 등록
-  getIt.registerFactory<EditorCubit>(
-    () => EditorCubit(documentRepository: getIt<DocumentRepository>()),
+  getIt.registerLazySingleton(
+    () => DocumentCubit(repository: getIt<DocumentRepository>()),
   );
 }

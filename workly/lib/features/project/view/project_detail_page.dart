@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workly/features/document/view/document_create_page.dart';
 
 class ProjectDetailPage extends StatelessWidget {
   final String projectId;
@@ -8,14 +9,19 @@ class ProjectDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('프로젝트 상세')), // 향후 프로젝트 이름으로 대체
+      appBar: AppBar(title: const Text('프로젝트 상세')),
       body: ListView(
         children: [
           ListTile(
             leading: const Icon(Icons.description),
             title: const Text('문서 추가'),
             onTap: () {
-              /* Document 생성 로직 */
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DocumentCreatePage(projectId: projectId),
+                ),
+              );
             },
           ),
           ListTile(
