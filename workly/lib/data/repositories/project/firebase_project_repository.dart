@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:workly/data/models/project.dart';
 import 'package:workly/data/repositories/project/project_repository.dart';
 
 class FirebaseProjectRepository implements ProjectRepository {
@@ -28,5 +29,11 @@ class FirebaseProjectRepository implements ProjectRepository {
             .get();
 
     return result.docs.map((doc) => doc.data()).toList();
+  }
+
+  @override
+  Future<Project> loadProjectById(String projectId) {
+    // TODO: implement loadProjectById
+    throw UnimplementedError();
   }
 }

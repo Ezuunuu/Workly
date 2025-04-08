@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:workly/data/auth/authentication_repository.dart';
 import 'package:workly/data/repositories/project/project_repository.dart';
+import 'package:workly/di/service_locator.dart';
 import 'package:workly/features/auth/view/login_page.dart';
+import 'package:workly/features/project/cubit/project_cubit.dart';
 import 'package:workly/features/project/view/project_create_page.dart';
 import 'package:workly/features/project/view/project_detail_page.dart';
 
@@ -35,7 +38,13 @@ class _HomePageState extends State<HomePage> {
   Future<void> _navigateToCreatePage() async {
     final created = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const ProjectCreatePage()),
+      MaterialPageRoute(
+        builder:
+            (_) => BlocProvider(
+              create: (_) => getIt<ProjectCubit>(),
+              child: const ProjectCreatePage(),
+            ),
+      ),
     );
     if (created == true) {
       _loadProjects();
@@ -93,8 +102,16 @@ class _HomePageState extends State<HomePage> {
                               context,
                               MaterialPageRoute(
                                 builder:
-                                    (_) => ProjectDetailPage(
-                                      projectId: project['id'],
+                                    (_) => BlocProvider(
+                                      create:
+                                          (_) =>
+                                              getIt<ProjectCubit>()
+                                                ..loadProjectById(
+                                                  project['id'],
+                                                ),
+                                      child: ProjectDetailPage(
+                                        projectId: project['id'],
+                                      ),
                                     ),
                               ),
                             );

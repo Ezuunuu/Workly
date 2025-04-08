@@ -11,6 +11,7 @@ import 'package:workly/data/repositories/project/firebase_project_repository.dar
 import 'package:workly/data/repositories/project/project_repository.dart';
 import 'package:workly/data/repositories/project/supabase_project_repository.dart';
 import 'package:workly/features/document/cubit/document_cubit.dart';
+import 'package:workly/features/project/cubit/project_cubit.dart';
 import '../data/repositories/document/document_repository.dart';
 
 final getIt = GetIt.instance;
@@ -42,7 +43,10 @@ Future<void> setupLocator() async {
   }
 
   // Bloc 등록
-  getIt.registerLazySingleton(
+  getIt.registerFactory(
     () => DocumentCubit(repository: getIt<DocumentRepository>()),
+  );
+  getIt.registerFactory(
+    () => ProjectCubit(repository: getIt<ProjectRepository>()),
   );
 }

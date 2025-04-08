@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:equatable/equatable.dart';
 
 import 'block.dart';
 
-class Document {
+class Document extends Equatable {
   final String id;
   final String projectId;
   final String title;
@@ -10,7 +11,7 @@ class Document {
   final DateTime createdAt;
   final List<Block> blocks;
 
-  Document({
+  const Document({
     required this.id,
     required this.projectId,
     required this.title,
@@ -21,19 +22,22 @@ class Document {
 
   factory Document.fromJson(Map<String, dynamic> json) => Document(
     id: json['id'],
-    projectId: json['projectId'],
+    projectId: json['project_id'],
     title: json['title'],
-    ownerId: json['ownerId'],
-    createdAt: (json['createdAt'] as Timestamp).toDate(),
-    blocks: (json['blocks'] as List).map((b) => Block.fromJson(b)).toList(),
+    ownerId: json['owner_id'],
+    createdAt:
+        json['created_at'] is String
+            ? DateTime.parse(json['created_at'])
+            : (json['created_at'] as Timestamp).toDate(),
+    blocks: [],
   );
 
   Map<String, dynamic> toJson() => {
     'id': id,
-    'projectId': projectId,
+    'project_id': projectId,
     'title': title,
-    'ownerId': ownerId,
-    'createdAt': Timestamp.fromDate(createdAt),
+    'owner_id': ownerId,
+    'created_at': Timestamp.fromDate(createdAt),
     'blocks': blocks.map((b) => b.toJson()).toList(),
   };
 
@@ -54,4 +58,7 @@ class Document {
       blocks: blocks ?? this.blocks,
     );
   }
+
+  @override
+  List<Object?> get props => [id, projectId, title, ownerId, createdAt, blocks];
 }

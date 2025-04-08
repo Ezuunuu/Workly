@@ -4,8 +4,8 @@ import 'package:workly/data/models/document.dart';
 import 'package:workly/data/repositories/document/document_repository.dart';
 
 class SupabaseDocumentRepository implements DocumentRepository {
-  final _docTable = 'document';
-  final _blockTable = 'block';
+  final _docTable = 'documents';
+  final _blockTable = 'blocks';
 
   @override
   Future<Document> createDocument(String title, String projectId) async {
@@ -27,16 +27,26 @@ class SupabaseDocumentRepository implements DocumentRepository {
   }
 
   @override
-  Future<Document?> getDocument(String documentId) async {
-    final response =
+  Future<Document?> getDocument(String id) async {
+    final result =
         await Supabase.instance.client
-            .from(_docTable)
+            .from('documents')
             .select()
-            .eq('id', documentId)
+            .eq('id', id)
             .maybeSingle();
 
-    if (response == null) return null;
-    return Document.fromJson(response);
+    if (result == null) return null;
+
+    final blocksResult = await Supabase.instance.client
+        .from('blocks')
+        .select()
+        .eq('document_id', id)
+        .order('order', ascending: true);
+
+    final blocks =
+        (blocksResult as List).map((b) => Block.fromJson(b)).toList();
+
+    return Document.fromJson(result).copyWith(blocks: blocks);
   }
 
   @override

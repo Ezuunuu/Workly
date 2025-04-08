@@ -1,4 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:workly/data/models/document.dart';
+import 'package:workly/data/models/project.dart';
 import 'package:workly/data/repositories/project/project_repository.dart';
 
 class SupabaseProjectRepository implements ProjectRepository {
@@ -25,5 +27,32 @@ class SupabaseProjectRepository implements ProjectRepository {
         .order('created_at');
 
     return List<Map<String, dynamic>>.from(result);
+  }
+
+  @override
+  Future<Project> loadProjectById(String projectId) async {
+    final projectResult =
+        await Supabase.instance.client
+            .from('project')
+            .select()
+            .eq('id', projectId)
+            .maybeSingle();
+
+    if (projectResult == null) {
+      throw Exception('프로젝트를 찾을 수 없습니다.');
+    }
+
+    final documentsResult = await Supabase.instance.client
+        .from('documents')
+        .select()
+        .eq('project_id', projectId)
+        .order('created_at', ascending: false);
+
+    final documents =
+        (documentsResult as List)
+            .map((docJson) => Document.fromJson(docJson))
+            .toList();
+
+    return Project.fromJson(projectResult).copyWith(documents: documents);
   }
 }

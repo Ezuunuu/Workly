@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
-import 'package:workly/data/repositories/project/project_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:workly/features/project/cubit/project_cubit.dart';
 
 class ProjectCreatePage extends StatefulWidget {
   const ProjectCreatePage({super.key});
@@ -11,22 +11,27 @@ class ProjectCreatePage extends StatefulWidget {
 
 class _ProjectCreatePageState extends State<ProjectCreatePage> {
   final TextEditingController nameController = TextEditingController();
-  bool isLoading = false;
-  String? errorMessage;
-
-  final projectRepository = GetIt.I<ProjectRepository>();
+  bool isSubmitting = false;
 
   Future<void> _createProject() async {
-    setState(() => isLoading = true);
-    try {
-      await projectRepository.createProject(nameController.text.trim());
-      if (!mounted) return;
+    setState(() => isSubmitting = true);
+
+    final cubit = context.read<ProjectCubit>();
+    await cubit.addProject(nameController.text.trim());
+
+    if (!mounted) return;
+
+    final state = cubit.state;
+    if (state.status == ProjectStatus.success) {
       Navigator.pop(context, true);
-    } catch (e) {
-      setState(() => errorMessage = '생성 실패: ${e.toString()}');
-    } finally {
-      setState(() => isLoading = false);
+    } else if (state.status == ProjectStatus.failure) {
+      final error = state.errorMessage ?? '알 수 없는 오류';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('프로젝트 생성 실패: $error')));
     }
+
+    setState(() => isSubmitting = false);
   }
 
   @override
@@ -44,14 +49,11 @@ class _ProjectCreatePageState extends State<ProjectCreatePage> {
               controller: nameController,
               decoration: const InputDecoration(border: OutlineInputBorder()),
             ),
-            const SizedBox(height: 16),
-            if (errorMessage != null)
-              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: isLoading ? null : _createProject,
+              onPressed: isSubmitting ? null : _createProject,
               child:
-                  isLoading
+                  isSubmitting
                       ? const CircularProgressIndicator()
                       : const Text('생성하기'),
             ),

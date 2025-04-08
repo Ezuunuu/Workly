@@ -19,7 +19,12 @@ class DocumentCubit extends Cubit<DocumentState> {
       final doc = await repository.getDocument(id);
       emit(state.copyWith(status: DocumentStatus.success, currentDoc: doc));
     } catch (e) {
-      emit(state.copyWith(status: DocumentStatus.failed));
+      emit(
+        state.copyWith(
+          status: DocumentStatus.failed,
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 
@@ -45,7 +50,12 @@ class DocumentCubit extends Cubit<DocumentState> {
 
       emit(state.copyWith(currentDoc: updated, status: DocumentStatus.success));
     } catch (e) {
-      emit(state.copyWith(status: DocumentStatus.failed));
+      emit(
+        state.copyWith(
+          status: DocumentStatus.failed,
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 
@@ -63,7 +73,12 @@ class DocumentCubit extends Cubit<DocumentState> {
 
       emit(state.copyWith(currentDoc: updated, status: DocumentStatus.success));
     } catch (e) {
-      emit(state.copyWith(status: DocumentStatus.failed));
+      emit(
+        state.copyWith(
+          status: DocumentStatus.failed,
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 
@@ -83,7 +98,12 @@ class DocumentCubit extends Cubit<DocumentState> {
 
       emit(state.copyWith(currentDoc: updated, status: DocumentStatus.success));
     } catch (e) {
-      emit(state.copyWith(status: DocumentStatus.failed));
+      emit(
+        state.copyWith(
+          status: DocumentStatus.failed,
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 
