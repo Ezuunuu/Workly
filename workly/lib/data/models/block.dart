@@ -5,7 +5,7 @@ enum BlockType { text, image, checkbox, table }
 
 class Block {
   Block({
-    required this.id,
+    this.id,
     required this.type,
     required this.content,
     required this.order,
@@ -13,7 +13,7 @@ class Block {
     required this.size,
   });
 
-  final String id;
+  final String? id;
   final BlockType type;
   BlockContent content;
   int order;
@@ -21,12 +21,13 @@ class Block {
   Size size;
 
   Map<String, dynamic> toJson() => {
-    'id': id,
     'type': type.name,
     'content': content.toJson(),
     'order': order,
-    'position': {'x': position.dx, 'y': position.dy},
-    'size': {'width': size.width, 'height': size.height},
+    'x': position.dx,
+    'y': position.dy,
+    'width': size.width,
+    'height': size.height,
   };
 
   factory Block.fromJson(Map<String, dynamic> json) => Block(
@@ -38,12 +39,12 @@ class Block {
     ),
     order: json['order'],
     position: Offset(
-      (json['position']['x'] as num).toDouble(),
-      (json['position']['y'] as num).toDouble(),
+      (json['x'] as num).toDouble(),
+      (json['y'] as num).toDouble(),
     ),
     size: Size(
-      (json['size']['width'] as num).toDouble(),
-      (json['size']['height'] as num).toDouble(),
+      (json['width'] as num).toDouble(),
+      (json['height'] as num).toDouble(),
     ),
   );
 

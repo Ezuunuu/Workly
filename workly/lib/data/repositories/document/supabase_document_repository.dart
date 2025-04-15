@@ -70,7 +70,7 @@ class SupabaseDocumentRepository implements DocumentRepository {
     await Supabase.instance.client
         .from(_blockTable)
         .update(block.toJson())
-        .eq('id', block.id)
+        .eq('id', block.id!)
         .eq('document_id', documentId);
   }
 

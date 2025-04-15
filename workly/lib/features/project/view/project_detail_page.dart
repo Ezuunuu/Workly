@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:workly/data/models/block.dart';
+import 'package:workly/data/models/block_content/block_content.dart';
+import 'package:workly/data/models/block_content/checkbox_content.dart';
+import 'package:workly/data/models/block_content/image_content.dart';
+import 'package:workly/data/models/block_content/table_content.dart';
+import 'package:workly/data/models/block_content/text_content.dart';
 import 'package:workly/features/project/cubit/project_cubit.dart';
 import 'package:workly/features/document/cubit/document_cubit.dart';
 import 'package:workly/data/repositories/document/document_repository.dart';
@@ -181,9 +187,126 @@ class _ProjectDetailViewState extends State<_ProjectDetailView> {
               ),
             ],
           ),
+          floatingActionButton: Builder(
+            builder: (buttonContext) {
+              return FloatingActionButton(
+                onPressed: () => _showBlockMenu(buttonContext),
+                child: const Icon(Icons.add),
+              );
+            },
+          ),
         );
       },
     );
+  }
+
+  void _showBlockMenu(BuildContext context) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final Offset offset = renderBox.localToGlobal(Offset.zero);
+    final Size size = renderBox.size;
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy - (56.0 * 4 + 8),
+        offset.dx + size.width,
+        offset.dy,
+      ),
+      items: [
+        PopupMenuItem<BlockType>(
+          value: BlockType.text,
+          child: ListTile(
+            leading: const Icon(Icons.text_fields),
+            title: const Text('텍스트 블록'),
+          ),
+        ),
+        PopupMenuItem<BlockType>(
+          value: BlockType.image,
+          child: ListTile(
+            leading: const Icon(Icons.image),
+            title: const Text('이미지 블록'),
+          ),
+        ),
+        PopupMenuItem<BlockType>(
+          value: BlockType.checkbox,
+          child: ListTile(
+            leading: const Icon(Icons.check_box),
+            title: const Text('체크박스 블록'),
+          ),
+        ),
+        PopupMenuItem<BlockType>(
+          value: BlockType.table,
+          child: ListTile(
+            leading: const Icon(Icons.table_chart),
+            title: const Text('표 블록'),
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value != null) {
+        _addBlock(value);
+      }
+    });
+  }
+
+  Future<void> _addBlock(BlockType blockType) async {
+    final block = Block(
+      type: blockType,
+      content: BlockContent.create(blockType), // BlockContent 생성
+      order: DateTime.now().millisecondsSinceEpoch,
+      position: Offset(0, 0),
+      size: Size(100, 50),
+    );
+
+    context.read<DocumentCubit>().addBlock(block);
+  }
+
+  Widget _buildTable(List<List<String>> data) {
+    return Table(
+      border: TableBorder.all(),
+      children:
+          data.map((row) {
+            return TableRow(
+              children:
+                  row
+                      .map(
+                        (cell) => Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Text(cell),
+                        ),
+                      )
+                      .toList(),
+            );
+          }).toList(),
+    );
+  }
+
+  Widget _buildBlockWidget(Block block) {
+    switch (block.type) {
+      case BlockType.text:
+        final content = block.content as TextContent;
+        return ListTile(
+          leading: const Icon(Icons.text_fields),
+          title: Text(content.text),
+        );
+      case BlockType.image:
+        final content = block.content as ImageContent;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Image.network(content.url),
+        );
+      case BlockType.checkbox:
+        final content = block.content as CheckboxContent;
+        return CheckboxListTile(
+          title: Text(content.label),
+          value: content.checked,
+          onChanged: (val) {},
+        );
+      case BlockType.table:
+        final content = block.content as TableContent;
+        return _buildTable(content.rows);
+    }
   }
 
   Widget _buildDetailView() {
@@ -194,15 +317,7 @@ class _ProjectDetailViewState extends State<_ProjectDetailView> {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.currentDoc == null) {
-            return Center(
-              child: TextButton.icon(
-                onPressed: () {
-                  // TODO: 블록 생성
-                },
-                icon: Icon(Icons.add, size: 18),
-                label: Text('블록 추가'),
-              ),
-            );
+            return Center(child: Text('빈 문서'));
           }
 
           final doc = state.currentDoc!;
@@ -212,6 +327,7 @@ class _ProjectDetailViewState extends State<_ProjectDetailView> {
               Text(doc.title, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 16),
               Text('생성일: ${doc.createdAt.toIso8601String()}'),
+              ...doc.blocks.map((block) => _buildBlockWidget(block)),
             ],
           );
         },
