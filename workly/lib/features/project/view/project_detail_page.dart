@@ -1,3 +1,4 @@
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -10,6 +11,7 @@ import 'package:workly/data/models/block_content/text_content.dart';
 import 'package:workly/features/project/cubit/project_cubit.dart';
 import 'package:workly/features/document/cubit/document_cubit.dart';
 import 'package:workly/data/repositories/document/document_repository.dart';
+import 'package:uuid/uuid.dart';
 
 class ProjectDetailPage extends StatelessWidget {
   final String projectId;
@@ -31,7 +33,7 @@ class ProjectDetailPage extends StatelessWidget {
 }
 
 class _ProjectDetailView extends StatefulWidget {
-  const _ProjectDetailView({super.key});
+  const _ProjectDetailView();
 
   @override
   State<_ProjectDetailView> createState() => _ProjectDetailViewState();
@@ -41,6 +43,9 @@ class _ProjectDetailViewState extends State<_ProjectDetailView> {
   String selectedType = 'document';
   bool isAddingDocument = false;
   final TextEditingController docNameController = TextEditingController();
+
+  final GlobalKey _canvasKey = GlobalKey();
+  String? draggingBlockId;
 
   @override
   Widget build(BuildContext context) {
@@ -252,33 +257,40 @@ class _ProjectDetailViewState extends State<_ProjectDetailView> {
 
   Future<void> _addBlock(BlockType blockType) async {
     final block = Block(
+      id: Uuid().v4(),
       type: blockType,
       content: BlockContent.create(blockType), // BlockContent 생성
       order: DateTime.now().millisecondsSinceEpoch,
       position: Offset(0, 0),
       size: Size(100, 50),
     );
+    await context.read<DocumentCubit>().addBlock(block);
 
-    context.read<DocumentCubit>().addBlock(block);
+    setState(() {
+      draggingBlockId = null;
+    });
   }
 
   Widget _buildTable(List<List<String>> data) {
-    return Table(
-      border: TableBorder.all(),
-      children:
-          data.map((row) {
-            return TableRow(
-              children:
-                  row
-                      .map(
-                        (cell) => Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(cell),
-                        ),
-                      )
-                      .toList(),
-            );
-          }).toList(),
+    return SizedBox(
+      width: 300,
+      child: Table(
+        border: TableBorder.all(),
+        children:
+            data.map((row) {
+              return TableRow(
+                children:
+                    row
+                        .map(
+                          (cell) => Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Text(cell),
+                          ),
+                        )
+                        .toList(),
+              );
+            }).toList(),
+      ),
     );
   }
 
@@ -286,27 +298,92 @@ class _ProjectDetailViewState extends State<_ProjectDetailView> {
     switch (block.type) {
       case BlockType.text:
         final content = block.content as TextContent;
-        return ListTile(
-          leading: const Icon(Icons.text_fields),
-          title: Text(content.text),
+        return SizedBox(
+          width: 300,
+          child: ListTile(
+            leading: const Icon(Icons.text_fields),
+            title: Text(content.text),
+          ),
         );
       case BlockType.image:
         final content = block.content as ImageContent;
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Image.network(content.url),
+        return SizedBox(
+          width: 300,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Image.network(content.url),
+          ),
         );
       case BlockType.checkbox:
         final content = block.content as CheckboxContent;
-        return CheckboxListTile(
-          title: Text(content.label),
-          value: content.checked,
-          onChanged: (val) {},
+        return SizedBox(
+          width: 300,
+          child: CheckboxListTile(
+            title: Text(content.label),
+            value: content.checked,
+            onChanged: (val) {},
+          ),
         );
       case BlockType.table:
         final content = block.content as TableContent;
         return _buildTable(content.rows);
     }
+  }
+
+  Widget _buildBorderWrapper({required bool isActive, required Widget child}) {
+    if (isActive) {
+      return DottedBorder(
+        color: Colors.blueAccent,
+        strokeWidth: 2,
+        dashPattern: [6, 3],
+        borderType: BorderType.RRect,
+        radius: const Radius.circular(4),
+        child: child,
+      );
+    }
+    return child;
+  }
+
+  Widget _buildDraggableBlock(Block block) {
+    final isDragging = draggingBlockId != null && draggingBlockId == block.id;
+    return Positioned(
+      left: block.position.dx,
+      top: block.position.dy,
+      child: LongPressDraggable<Block>(
+        data: block,
+        feedback: Material(
+          color: Colors.transparent,
+          child: _buildBorderWrapper(
+            isActive: true,
+            child: _buildBlockWidget(block),
+          ),
+        ),
+        childWhenDragging: const SizedBox.shrink(),
+        onDragStarted: () {
+          setState(() => draggingBlockId = block.id);
+        },
+        onDragEnd: (details) async {
+          final renderBox = _canvasKey.currentContext?.findRenderObject();
+          if (renderBox is! RenderBox) return;
+
+          final localOffset = renderBox.globalToLocal(details.offset);
+          final size = renderBox.size;
+
+          final dx = localOffset.dx.clamp(0.0, size.width - block.size.width);
+          final dy = localOffset.dy.clamp(0.0, size.height - block.size.height);
+
+          final safeOffset = Offset(dx, dy);
+
+          final updated = block.copyWith(position: safeOffset);
+          draggingBlockId = null;
+          context.read<DocumentCubit>().updateBlock(updated);
+        },
+        child: _buildBorderWrapper(
+          isActive: isDragging,
+          child: _buildBlockWidget(block),
+        ),
+      ),
+    );
   }
 
   Widget _buildDetailView() {
@@ -316,18 +393,54 @@ class _ProjectDetailViewState extends State<_ProjectDetailView> {
           if (state.status == DocumentStatus.loading) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (state.currentDoc == null) {
-            return Center(child: Text('빈 문서'));
+
+          final doc = state.currentDoc;
+          if (doc == null) {
+            return const Center(child: Text('빈 문서'));
           }
 
-          final doc = state.currentDoc!;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          return Stack(
+            key: _canvasKey,
             children: [
-              Text(doc.title, style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 16),
-              Text('생성일: ${doc.createdAt.toIso8601String()}'),
-              ...doc.blocks.map((block) => _buildBlockWidget(block)),
+              Positioned.fill(child: Container(color: Colors.white)),
+              ...doc.blocks.map(_buildDraggableBlock),
+              if (draggingBlockId != null)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: DragTarget<Block>(
+                    onWillAcceptWithDetails: (block) => true,
+                    onAcceptWithDetails: (details) async {
+                      await context.read<DocumentCubit>().deleteBlock(
+                        details.data.id!,
+                      );
+                      setState(() => draggingBlockId = null);
+                    },
+                    builder: (context, candidateData, rejectedData) {
+                      final isHovering = candidateData.isNotEmpty;
+                      return Container(
+                        height: 100,
+                        color:
+                            isHovering
+                                ? Colors.red.withValues(alpha: .8)
+                                : Colors.red.withValues(alpha: .5),
+                        alignment: Alignment.center,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.delete, color: Colors.white, size: 30),
+                            SizedBox(height: 4),
+                            Text(
+                              '여기로 드래그해서 삭제',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
             ],
           );
         },

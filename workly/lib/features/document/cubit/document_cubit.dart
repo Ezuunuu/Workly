@@ -123,6 +123,28 @@ class DocumentCubit extends Cubit<DocumentState> {
     });
   }
 
+  Future<void> updateBlock(Block updatedBlock) async {
+    final current = state.currentDoc;
+    if (current == null) return;
+
+    final newBlocks =
+        current.blocks.map((b) {
+          return b.id == updatedBlock.id ? updatedBlock : b;
+        }).toList();
+
+    final updatedDoc = current.copyWith(blocks: newBlocks);
+    emit(
+      state.copyWith(currentDoc: updatedDoc, status: DocumentStatus.loading),
+    );
+
+    try {
+      await repository.updateBlock(current.id, updatedBlock);
+      emit(state.copyWith(status: DocumentStatus.success));
+    } catch (_) {
+      emit(state.copyWith(status: DocumentStatus.failed));
+    }
+  }
+
   @override
   Future<void> close() {
     _blockSubscription?.cancel();
